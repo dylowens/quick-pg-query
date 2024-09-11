@@ -16,6 +16,18 @@ app.get('/all-philosophers', async (req, res) => {
   console.log('GET /all-philosophers route hit');
   try {
     const client = await pool.connect();
+    try {
+      const query = `
+        SELECT p.name, t.name as theory, c.name as category
+        FROM philosophers p
+        LEFT JOIN theory_philosopher tp ON p.id = tp.philosopher_id
+        LEFT JOIN theories t ON tp.theory_id = t.id
+        LEFT JOIN categories c ON t.category_id = c.id
+      `;
+      const result = await client.query(query);
+      res.json(result.rows);
+    } finally {
+      client.release();
     }
   } catch (error) {
     console.error('Error fetching all philosophers:', error);
