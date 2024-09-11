@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosopher Database</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f0f2f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        form { 
+            margin-bottom: 20px; 
+            display: flex;
+            justify-content: center;
+        }
+        .search-container {
+            display: flex;
+            max-width: 500px;
+            width: 100%;
+        }
+        input[type="text"] { 
+            flex-grow: 1;
+            padding: 10px 15px; 
+            border: 1px solid #ddd;
+            border-radius: 20px 0 0 20px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+        button { 
+            padding: 10px 20px; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 0 20px 20px 0;
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            margin-bottom: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f8f8f8; 
+            font-weight: bold;
+            color: #333;
+        }
+        .error { 
+            color: #d32f2f; 
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #allPhilosophers ul {
+            column-count: 3;
+            column-gap: 20px;
+            list-style-type: none;
+            padding: 0;
+        }
+        #allPhilosophers li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Philosopher Database</h1>
+    
+    <!-- Add this button above the search form -->
+    <button id="listAllBtn" style="margin-bottom: 20px;">List All Philosophers</button>
+
+    <form id="searchForm">
+        <div class="search-container">
+            <input type="text" id="name" placeholder="Enter philosopher's name..." required>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+    
+    <!-- Add this div to display all philosophers -->
+    <div id="allPhilosophers"></div>
+
+    <div id="error" class="error"></div>
+    <div id="results"></div>
+
+    <script>
+        function displayPhilosophers(philosophers, targetDiv, showDetails = true) {
+            if (philosophers.length === 0) {
+                targetDiv.innerHTML = '<p>No philosophers found.</p>';
+            } else if (!showDetails) {
+                let listHtml = '<ul>';
+                philosophers.forEach(philosopher => {
+                    listHtml += `<li>• ${philosopher.name}</li>`;
+                });
+                listHtml += '</ul>';
+                targetDiv.innerHTML = listHtml;
+            } else {
+                let tableHtml = `
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th>Theory</th>
+                            <th>Category</th>
+                        </tr>
+                `;
+                philosophers.forEach(philosopher => {
+                    tableHtml += `
+                        <tr>
+                            <td>${philosopher.name}</td>
+                            <td>${philosopher.theory || 'N/A'}</td>
+                            <td>${philosopher.category || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                tableHtml += '</table>';
+                targetDiv.innerHTML = tableHtml;
+            }
+        }
+
+        async function listAllPhilosophers() {
+            const errorDiv = document.getElementById('error');
+            const allPhilosophersDiv = document.getElementById('allPhilosophers');
+            const resultsDiv = document.getElementById('results');
+
+            // Clear search results and show all philosophers div
+            resultsDiv.innerHTML = '';
+            allPhilosophersDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/all-philosophers');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const philosophers = await response.json();
+                errorDiv.textContent = '';
+                displayPhilosophers(philosophers, allPhilosophersDiv, false);
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred while fetching all philosophers. Please try again.';
+                allPhilosophersDiv.innerHTML = '';
+            }
+        }
+
+        // Add event listener for the new button
+        document.getElementById('listAllBtn').addEventListener('click', listAllPhilosophers);
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            const allPhilosophersDiv = document.getElementById('allPhilosophers');
+
+            // Hide the all philosophers table
+            allPhilosophersDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/search-philosophers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const philosophers = await response.json();
+                errorDiv.textContent = '';
+                displayPhilosophers(philosophers, resultsDiv);
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred while searching. Please try again.';
+                resultsDiv.innerHTML = '';
+            }
+        });
+    </script>
+</body>
+</html>
