@@ -12,17 +12,10 @@ app.get('/', (req, res) => {
   res.render('index', { philosophers: [], error: null });
 });
 
-// Add this new route
 app.get('/all-philosophers', async (req, res) => {
   console.log('GET /all-philosophers route hit');
   try {
     const client = await pool.connect();
-    try {
-      const query = 'SELECT name FROM philosophers ORDER BY name';
-      const result = await client.query(query);
-      res.json(result.rows);
-    } finally {
-      client.release();
     }
   } catch (error) {
     console.error('Error fetching all philosophers:', error);
