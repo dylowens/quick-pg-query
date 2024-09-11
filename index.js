@@ -12,23 +12,10 @@ app.get('/', (req, res) => {
   res.render('index', { philosophers: [], error: null });
 });
 
-// Update this route for fetching all philosophers
 app.get('/all-philosophers', async (req, res) => {
   console.log('GET /all-philosophers route hit');
   try {
     const client = await pool.connect();
-    console.log('Connected to database');
-    try {
-      const query = `
-        SELECT * FROM philosophers;
-      `;
-      console.log('Executing query:', query);
-      const result = await client.query(query);
-      console.log('Query executed, row count:', result.rowCount);
-      res.json(result.rows);
-    } finally {
-      client.release();
-      console.log('Database connection released');
     }
   } catch (error) {
     console.error('Error fetching all philosophers:', error);
