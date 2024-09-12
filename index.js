@@ -38,6 +38,30 @@ app.get('/all-philosophers', async (req, res) => {
   }
 });
 
+app.get('/all-theories', async (req, res) => {
+  console.log('GET /all-theories route hit');
+  try {
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT t.name as theory, c.name as category
+        FROM theories t
+        LEFT JOIN categories c ON t.category_id = c.id
+      `;
+      const result = await client.query(query);
+      res.json(result.rows);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error fetching all theories:', error);
+    res.status(500).json({ 
+      error: 'An error occurred while processing your request', 
+      details: error.message || 'Unknown error',
+    });
+  }
+});
+
 app.post('/search-philosophers', async (req, res) => {
   console.log('POST /search-philosophers route hit');
   try {

@@ -82,13 +82,24 @@
         #allPhilosophers li {
             margin-bottom: 5px;
         }
+        #allTheories ul {
+            column-count: 3;
+            column-gap: 20px;
+            list-style-type: none;
+            padding: 0;
+        }
+        #allTheories li {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>Philosopher Database</h1>
     
-    <!-- Add this button above the search form -->
+    <!-- Buttons stacked vertically -->
     <button id="listAllBtn" style="margin-bottom: 20px;">List All Philosophers</button>
+    <br>
+    <button id="listAllTheoriesBtn" style="margin-bottom: 20px;">List All Theories</button>
 
     <form id="searchForm">
         <div class="search-container">
@@ -97,8 +108,9 @@
         </div>
     </form>
     
-    <!-- Add this div to display all philosophers -->
+    <!-- Add these divs to display all philosophers and theories -->
     <div id="allPhilosophers"></div>
+    <div id="allTheories"></div>
 
     <div id="error" class="error"></div>
     <div id="results"></div>
@@ -137,6 +149,19 @@
             }
         }
 
+        function displayTheories(theories, targetDiv) {
+            if (theories.length === 0) {
+                targetDiv.innerHTML = '<p>No theories found.</p>';
+            } else {
+                let listHtml = '<ul>';
+                theories.forEach(theory => {
+                    listHtml += `<li>• ${theory.theory} (${theory.category || 'N/A'})</li>`;
+                });
+                listHtml += '</ul>';
+                targetDiv.innerHTML = listHtml;
+            }
+        }
+
         async function listAllPhilosophers() {
             const errorDiv = document.getElementById('error');
             const allPhilosophersDiv = document.getElementById('allPhilosophers');
@@ -151,9 +176,13 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const philosophers = await response.json();
+                let philosophers = await response.json();
+                philosophers = Array.from(new Set(philosophers.map(p => p.name)))
+                    .map(name => ({ name }));
+                philosophers.sort((a, b) => a.name.localeCompare(b.name));
                 errorDiv.textContent = '';
                 displayPhilosophers(philosophers, allPhilosophersDiv, false);
+                document.getElementById('allTheories').style.display = 'none';
             } catch (error) {
                 console.error('Error:', error);
                 errorDiv.textContent = 'An error occurred while fetching all philosophers. Please try again.';
@@ -161,8 +190,36 @@
             }
         }
 
-        // Add event listener for the new button
+        async function listAllTheories() {
+            const errorDiv = document.getElementById('error');
+            const allTheoriesDiv = document.getElementById('allTheories');
+            const resultsDiv = document.getElementById('results');
+            const allPhilosophersDiv = document.getElementById('allPhilosophers');
+
+            // Clear other results and show all theories div
+            resultsDiv.innerHTML = '';
+            allPhilosophersDiv.innerHTML = '';
+            allTheoriesDiv.style.display = 'block';
+
+            try {
+                const response = await fetch('/all-theories');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const theories = await response.json();
+                errorDiv.textContent = '';
+                displayTheories(theories, allTheoriesDiv);
+                document.getElementById('allPhilosophers').style.display = 'none';
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred while fetching all theories. Please try again.';
+                allTheoriesDiv.innerHTML = '';
+            }
+        }
+
+        // Add event listeners for both buttons
         document.getElementById('listAllBtn').addEventListener('click', listAllPhilosophers);
+        document.getElementById('listAllTheoriesBtn').addEventListener('click', listAllTheories);
 
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -188,6 +245,8 @@
                 const philosophers = await response.json();
                 errorDiv.textContent = '';
                 displayPhilosophers(philosophers, resultsDiv);
+                document.getElementById('allPhilosophers').style.display = 'none';
+                document.getElementById('allTheories').style.display = 'none';
             } catch (error) {
                 console.error('Error:', error);
                 errorDiv.textContent = 'An error occurred while searching. Please try again.';
