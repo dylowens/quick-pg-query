@@ -90,6 +90,36 @@ app.post('/search-philosophers', async (req, res) => {
   }
 });
 
+app.post('/search-theories', async (req, res) => {
+  console.log('POST /search-theories route hit');
+  try {
+    const { theory } = req.body;
+    const client = await pool.connect();
+    try {
+      const query = `
+        SELECT t.name as theory, c.name as category, 
+               array_agg(DISTINCT p.name) as philosophers
+        FROM theories t
+        LEFT JOIN categories c ON t.category_id = c.id
+        LEFT JOIN theory_philosopher tp ON t.id = tp.theory_id
+        LEFT JOIN philosophers p ON tp.philosopher_id = p.id
+        WHERE t.name ILIKE $1
+        GROUP BY t.name, c.name
+      `;
+      const result = await client.query(query, [`%${theory}%`]);
+      res.json(result.rows);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error searching theories:', error);
+    res.status(500).json({ 
+      error: 'An error occurred while processing your request', 
+      details: error.message || 'Unknown error',
+    });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

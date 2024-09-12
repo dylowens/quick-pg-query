@@ -91,6 +91,11 @@
         #allTheories li {
             margin-bottom: 5px;
         }
+        .theory-search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -104,7 +109,15 @@
     <form id="searchForm">
         <div class="search-container">
             <input type="text" id="name" placeholder="Enter philosopher's name..." required>
-            <button type="submit">Search</button>
+            <button type="submit">Search Philosopher</button>
+        </div>
+    </form>
+    
+    <!-- New search form for theories -->
+    <form id="searchTheoryForm" class="theory-search-container">
+        <div class="search-container">
+            <input type="text" id="theory" placeholder="Enter theory name..." required>
+            <button type="submit">Search Theory</button>
         </div>
     </form>
     
@@ -149,16 +162,36 @@
             }
         }
 
-        function displayTheories(theories, targetDiv) {
+        function displayTheories(theories, targetDiv, showDetails = true) {
             if (theories.length === 0) {
                 targetDiv.innerHTML = '<p>No theories found.</p>';
-            } else {
+            } else if (!showDetails) {
                 let listHtml = '<ul>';
                 theories.forEach(theory => {
                     listHtml += `<li>• ${theory.theory} (${theory.category || 'N/A'})</li>`;
                 });
                 listHtml += '</ul>';
                 targetDiv.innerHTML = listHtml;
+            } else {
+                let tableHtml = `
+                    <table>
+                        <tr>
+                            <th>Theory</th>
+                            <th>Category</th>
+                            <th>Philosophers</th>
+                        </tr>
+                `;
+                theories.forEach(theory => {
+                    tableHtml += `
+                        <tr>
+                            <td>${theory.theory}</td>
+                            <td>${theory.category || 'N/A'}</td>
+                            <td>${theory.philosophers ? theory.philosophers.join(', ') : 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                tableHtml += '</table>';
+                targetDiv.innerHTML = tableHtml;
             }
         }
 
@@ -208,7 +241,7 @@
                 }
                 const theories = await response.json();
                 errorDiv.textContent = '';
-                displayTheories(theories, allTheoriesDiv);
+                displayTheories(theories, allTheoriesDiv, false);
                 document.getElementById('allPhilosophers').style.display = 'none';
             } catch (error) {
                 console.error('Error:', error);
@@ -227,6 +260,9 @@
             const errorDiv = document.getElementById('error');
             const resultsDiv = document.getElementById('results');
             const allPhilosophersDiv = document.getElementById('allPhilosophers');
+
+            // Clear the theory search input
+            document.getElementById('theory').value = '';
 
             // Hide the all philosophers table
             allPhilosophersDiv.style.display = 'none';
@@ -250,6 +286,42 @@
             } catch (error) {
                 console.error('Error:', error);
                 errorDiv.textContent = 'An error occurred while searching. Please try again.';
+                resultsDiv.innerHTML = '';
+            }
+        });
+
+        document.getElementById('searchTheoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const theory = document.getElementById('theory').value;
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            const allPhilosophersDiv = document.getElementById('allPhilosophers');
+            const allTheoriesDiv = document.getElementById('allTheories');
+
+            // Clear the philosopher search input
+            document.getElementById('name').value = '';
+
+            // Hide other divs
+            allPhilosophersDiv.style.display = 'none';
+            allTheoriesDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/search-theories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ theory })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const theories = await response.json();
+                errorDiv.textContent = '';
+                displayTheories(theories, resultsDiv);
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = 'An error occurred while searching for theories. Please try again.';
                 resultsDiv.innerHTML = '';
             }
         });
