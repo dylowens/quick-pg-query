@@ -97,14 +97,21 @@ app.post('/search-theories', async (req, res) => {
     const client = await pool.connect();
     try {
       const query = `
-        SELECT t.name as theory, c.name as category, 
-               array_agg(DISTINCT p.name) as philosophers
+        WITH matched_theory AS (
+          SELECT t.id, t.name AS theory, t.category_id
+          FROM theories t
+          WHERE t.name ILIKE $1
+        )
+        SELECT t.name AS theory, c.name AS category, ARRAY_AGG(DISTINCT p.name) AS philosophers
         FROM theories t
-        LEFT JOIN categories c ON t.category_id = c.id
+        JOIN categories c ON t.category_id = c.id
         LEFT JOIN theory_philosopher tp ON t.id = tp.theory_id
         LEFT JOIN philosophers p ON tp.philosopher_id = p.id
-        WHERE t.name ILIKE $1
+        WHERE t.category_id = (SELECT category_id FROM matched_theory)
         GROUP BY t.name, c.name
+        ORDER BY 
+          CASE WHEN t.name ILIKE $1 THEN 0 ELSE 1 END,
+          t.name
       `;
       const result = await client.query(query, [`%${theory}%`]);
       res.json(result.rows);
