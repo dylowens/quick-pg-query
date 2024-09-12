@@ -124,11 +124,11 @@
             if (philosophers.length === 0) {
                 targetDiv.innerHTML = '<p>No results found.</p>';
             } else if (!showDetails) {
-                let listHtml = '<ul>';
+                let listHtml = '<div style="column-count: 3; column-gap: 20px;"><ul style="list-style-type: none; padding: 0;">';
                 philosophers.forEach(philosopher => {
                     listHtml += `<li>• ${philosopher.name}</li>`;
                 });
-                listHtml += '</ul>';
+                listHtml += '</ul></div>';
                 targetDiv.innerHTML = listHtml;
             } else {
                 let tableHtml = `
@@ -157,11 +157,11 @@
             if (theories.length === 0) {
                 targetDiv.innerHTML = '<p>No results found.</p>';
             } else if (!showDetails) {
-                let listHtml = '<ul>';
+                let listHtml = '<div style="column-count: 3; column-gap: 20px;"><ul style="list-style-type: none; padding: 0;">';
                 theories.forEach(theory => {
                     listHtml += `<li>• ${theory.theory} (${theory.category || 'N/A'})</li>`;
                 });
-                listHtml += '</ul>';
+                listHtml += '</ul></div>';
                 targetDiv.innerHTML = listHtml;
             } else {
                 let tableHtml = `
